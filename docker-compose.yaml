@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  client:
+    build:
+      context: './client'
+      dockerfile: Dockerfile
+    ports:
+      - 5173:5173
+    container_name: client  
+    environment:
+      - VITE_POST_LINK=http://localhost:4000
+      - VITE_QUERY_LINK=http://localhost:9000
+      - VITE_COMMENT_LINK=http://localhost:7000
+      - VITE_EVENT_BUS_LINK=http://localhost:8000
+      - VITE_MODERATION_LINK=http://localhost:6000
+      - VITE_CLIENT_LINK=http://localhost:5173
+    networks:
+      - blog_network   
+
+  posts:
+    build:
+      context: './posts'
+      dockerfile: Dockerfile
+    ports: 
+      - 4000:4000
+    container_name: posts
+    networks:
+      - blog_network 
+
+  comments:
+    build:
+      context: './comments'
+      dockerfile: Dockerfile
+    ports: 
+      - 7000:7000
+    container_name: comments
+    networks:
+      - blog_network
+
+  event-bus:
+    build: 
+      context: './event-bus'
+      dockerfile: Dockerfile
+    ports: 
+      - 8000:8000
+    container_name: event-bus
+    networks:
+      - blog_network 
+
+  moderation:
+    build: 
+      context: './moderation'
+      dockerfile: Dockerfile
+    ports: 
+      - 6000:6000
+    container_name: moderation
+    networks:
+      - blog_network 
+
+  query:
+    build: 
+      context: './query'
+      dockerfile: Dockerfile
+    ports: 
+      - 9000:9000
+    container_name: query 
+    networks:
+      - blog_network
+    depends_on:
+      - posts
+      - comments
+      - event-bus
+      - moderation
+      - client  
+
+networks:
+  blog_network:
+    driver: bridge
