@@ -1,97 +1,98 @@
-const express = require("express")
-const { randomBytes } = require("crypto")
-const bodyParser = require('body-parser')
-const cors = require('cors')
-const http = require('http')
-const { hostname } = require("os")
-const app = express()
-app.use(bodyParser.json())
-app.use(cors())
+import express from "express";
+import { randomBytes } from "crypto";
+import cors from "cors";
+import call from "./call.js";
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-function eventCall(port, data, hostname = 'localhost') {
-    const postData = JSON.stringify(data)
+const commentsByPostId = {};
 
-    const options = {
-        hostname,
-        port,
-        path: '/events',
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(postData)
-        }
-    }
+app.get("/posts/:id/comment", (req, res) => {
+  res.send(commentsByPostId[req.params.id] || []);
+});
 
-    const request = http.request(options)
+app.post("/posts/:id/comment", async (req, res) => {
+  const { content } = req.body;
+  const postId = req.params.id;
+  const commentId = randomBytes(4).toString("hex");
 
-    request.on('error', error => {
-        console.log("error", error)
-    })
+  const comments = commentsByPostId[postId] || [];
 
-    request.write(postData)
+  comments.push({
+    id: commentId,
+    content,
+    status: "pending",
+  });
 
+  commentsByPostId[postId] = comments;
 
-
-    request.end()
-}
-
-const commentById = {}
-app.get('/posts/:id/comments', (req, res) => {
-    res.send(commentById[req.params.id] || [])
-})
-
-app.post('/posts/:id/comments', (req, res) => {
-    const commentId = randomBytes(4).toString('hex')
-    const { content } = req.body
-    const comments = commentById[req.params.id] || []
-
-    if (!content) {
-        return res.status(401).send("content is required")
-    }
-
-    comments.push({ commentId, content, status: 'pending' })
-
-    commentById[req.params.id] = comments
-
-    //event broker
-    eventCall(8000, {
-        type: "commentCreated",
+  try {
+    const eventResponse = await call(
+      "http://localhost:4005/events",
+      "POST",
+      {},
+      {
+        type: "CommentCreated",
         data: {
-            commentId, content, postId: req.params.id, status: 'pending'
+          id: commentId,
+          content,
+          postId,
+          status: "pending",
         },
+      }
+    );
+    console.log("Event Response:", eventResponse);
 
-    }, 'event-bus')
-    //end of event broker
-    res.status(201).send(comments)
+    res.status(201).send(comments);
+  } catch (error) {
+    console.error("Error dispatching event:", error.message);
+    res.status(500).send({ error: "Failed to create post" });
+  }
+});
 
-})
+app.post("/events", async (req, res) => {
+  const { type, data } = req.body;
 
-app.post('/events', (req, res) => {
-    console.log("event recived", req.body)
+  if (type === "CommentModerated") {
+    const { id, status, postId, content } = data;
+    const comments = commentsByPostId[postId];
 
-    const { type, data } = req.body
+    const comment = comments.find((comment) => comment.id === id);
 
-    if (type === 'commentModerated') {
-        const { postId, commentId, status, content } = data
-        const comments = commentById[postId]
-        const comment = comments.find((com) => {
-            return com.commentId === commentId
-        })
-        comment.status = status
-        eventCall(8000, {
-            type: 'commentUpdated',
-            data: {
-                commentId, content, postId, status
-            },
-        
-        },'event-bus')
+    comment.status = status;
+
+    try {
+      await call(
+        "http://localhost:4005/events",
+        "POST",
+        {},
+        {
+          type: "CommentUpdated",
+          data: {
+            id,
+            content,
+            postId,
+            status,
+          },
+        }
+      );
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Error dispatching event:", error.message);
+      res.status(500).send({ error: "Failed to send event" });
     }
+  } else {
+    console.log("hi event comment")
+    res.sendStatus(200);
+  }
+});
 
-
-    res.send({})
-})
-
-
-app.listen(7000, () => {
-    console.log("running on 7000 !!")
-})
+app.listen(4001, (err) => {
+  if (err) {
+    console.log(err);
+  } else {
+    console.log("Listening on 4001 !!");
+  }
+});

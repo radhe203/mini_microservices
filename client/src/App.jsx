@@ -1,55 +1,21 @@
-import React, { useEffect, useState } from 'react'
-import Card from './components/Card'
-import { useAppContext } from '../context/Context'
+import CreatePost from "./components/CreatePost";
+import PostCard from "./components/PostCard";
+import PostList from "./components/PostList";
 
-const App = () => {
-  
-  
-  const {post,setPost} = useAppContext()
-  const [tittle,setTittle] = useState("")
-
-  console.log(post)
-
-  const renderedPosts = Object.values(post).map((e)=>{
-    return <Card id={e.id} tittle={e.tittle} key={e.id}/>
-  })
-
-  async function submitHandel(e){
-    e.preventDefault()
-    const res = await fetch(`${import.meta.env.VITE_POST_LINK}/posts`,{
-      method:"POST",
-      headers:{
-        'Content-Type':'application/json'
-      },
-      body:JSON.stringify({tittle})
-    })
-    const data = await res.json()
-    if(res.ok){
-      setTittle("")
-      setPost(data)
-    }
-  }
-
+function App() {
   return (
     <>
-    <div className='container'>
-
-      <div className='create'>
-        <form className='box' onSubmit={submitHandel}>
-          <h1>Create Blogs</h1>
-          <input type="text" placeholder='tittle' value={tittle} onChange={(e)=>{
-            setTittle(e.target.value)
-          }}/>
-          <button type='submit'>Submit</button>
-        </form>
-        
+      <div className=" container grid grid-cols-[.3fr,1fr] ">
+        <div className=" flex flex-col justify-center items-center h-[100vh] sticky top-0 border-r-2">
+          <h1 className=" text-xl font-bold text-blue-600 uppercase mb-5">
+            Create a post
+          </h1>
+          <CreatePost />
+        </div>
+        <PostList />
       </div>
-      <div className='blogs'>
-        {renderedPosts}
-      </div>
-    </div>
     </>
-  )
+  );
 }
 
-export default App
+export default App;

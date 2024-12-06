@@ -1,60 +1,45 @@
-const express = require("express")
-const http = require('http')
-const { hostname } = require("os")
-const app = express()
-app.use(express.json())
+import express from "express";
+import call from "./call.js";
 
-function eventCall(port,data,hostname='localhost'){
-    const postData = JSON.stringify(data)
+const app = express();
+app.use(express.json());
 
-    const options = {
-        hostname,
-        port,
-        path:'/events',
-        method:"POST",
-        headers:{
-            'Content-Type':'application/json',
-            'Content-Length':Buffer.byteLength(postData)
-        },
+app.post("/events", async (req, res) => {
+  const { type, data } = req.body;
+
+  if (type === "CommentCreated") {
+    const status = data.content.includes("orange") ? "rejected" : "approved";
+
+    try {
+      await call(
+        "http://localhost:4005/events",
+        "POST",
+        {},
+        {
+          type: "CommentModerated",
+          data: {
+            id: data.id,
+            content: data.content,
+            postId: data.postId,
+            status,
+          },
+        }
+      );
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Error dispatching event:", error.message);
+      res.status(500).send({ error: "Failed to send event" });
     }
+  } else {
+    res.sendStatus(200);
+  }
+});
 
-    const request = http.request(options)
-
-    request.on('error',(error)=>{
-        console.log(error)
-    })
-
-    request.write(postData)
-
-    request.end()
-}
-
-app.post('/events',(req,res)=>{
-    const {type,data} = req.body
-    console.log(req.body)
-    if(type === 'commentCreated'){
-        const status = data.content.includes('orange') ? "rejected":"approved"
-        setTimeout(()=>{
-            eventCall(8000,{
-                type:"commentModerated",
-                data:{
-                commentId:data.commentId,
-                postId:data.postId,
-                content:data.content,
-                status
-            }},
-        'event-bus'
-        )
-            
-        },5000)
-       
-    }
-    res.send({status:'ok'})
-})
-
-
-
-
-app.listen(6000,()=>{
-    console.log("server running on port 6000!!!")
-})
+app.listen(4003, (err) => {
+  if (err) {
+    console.log(err);
+  } else {
+    console.log("Listening on 4003 !!");
+  }
+});

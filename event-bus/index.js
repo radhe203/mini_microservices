@@ -1,69 +1,51 @@
-const express = require('express')
-const bodyParser = require('body-parser')
-const http = require('http')
-const { type, hostname } = require('os')
+import express from "express";
+import call from "./call.js";
 
-const app = express()
-app.use(bodyParser.json())
-async function eventCall(port, event,hostname='localhost') {
-    const postData = JSON.stringify(event)
+const app = express();
+app.use(express.json());
 
-    const options = {
-        hostname,
-        port,
-        path: '/events',
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(postData)
-        }
-    }
-    try {
-        const request = http.request(options)
-        request.on('error', (error) => {
-            console.log(error)
-        })
-        request.write(postData)
-        request.end()
-    } catch (error) {
-        console.log(error)
-    }
-}
+const events = [];
 
-const allEvent = []
-app.post('/events', async (req, res) => {
-    const event = req.body
-    allEvent.push(event)
-    await eventCall(9000, event,'query')
-    if (event.type === "commentCreated") {
-        await eventCall(6000, event,'moderation')
-    }
+app.post("/events", async (req, res) => {
+  const event = req.body;
 
-    if (event.type === 'commentModerated') {
-        await eventCall(7000, event,'comments')
-    }
+  events.push(event);
 
-    if (event.type === 'commentUpdated') {
-        await eventCall(9000, event,'query')
-    }
-    console.log(event)
-    res.send({ status: 'ok' })
-})
+  try {
+    await call("http://localhost:4000/events", "POST", {}, event);
+  } catch (error) {
+    console.log(error);
+  }
 
+  try {
+    await call("http://localhost:4001/events", "POST", {}, event);
+  } catch (error) {
+    console.log(error);
+  }
 
-app.get('/events', (re, res) => {
-    res.send(allEvent)
-})
-app.listen(8000, () => {
-    console.log("event bus runing on 8000!!!")
-})
+  try {
+    await call("http://localhost:4002/events", "POST", {}, event);
+  } catch (error) {
+    console.log(error);
+  }
 
+  try {
+    await call("http://localhost:4003/events", "POST", {}, event);
+  } catch (error) {
+    console.log(error);
+  }
 
+  res.sendStatus(200);
+});
 
+app.get("/events", (req, res) => {
+  res.send(events);
+});
 
-
-
-
-
-
-
+app.listen(4005, (err) => {
+  if (err) {
+    console.log(err);
+  } else {
+    console.log("Listening on 4005 !!");
+  }
+});

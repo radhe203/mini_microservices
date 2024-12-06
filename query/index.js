@@ -1,95 +1,66 @@
-const express = require("express")
-const cors = require("cors")
-const bodyParser = require('body-parser')
-const app = express()
-const http = require('http')
-app.use(cors())
-app.use(bodyParser.json())
+import express, { json } from "express";
+import cors from "cors";
+import call from "./call.js";
 
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-const posts = {}
+const posts = {};
 
-app.get('/posts', (req, res) => {
-    res.send(posts)
-})
+function HandelEvent(type, data) {
+  if (type === "PostCreated") {
+    const { id, tittle } = data;
+    posts[id] = {
+      id,
+      tittle,
+      comments: [],
+    };
+  }
+  if (type === "CommentCreated") {
+    const { id, content, postId, status } = data;
+    const post = posts[postId];
+    post.comments.push({ id, content, status });
+  }
 
-function eventHandel(type, data) {
-    if (type === "postCreated") {
-        const { id, tittle } = data
-        posts[id] = {
-            id, tittle, comments: []
-        }
-    }
+  if (type === "CommentUpdated") {
+    const { id, content, postId, status } = data;
+    const post = posts[postId];
 
-    if (type === "commentCreated") {
-        const { content, postId, commentId, status } = data
-        const post = posts[postId]
-        post.comments.push({ commentId, content, status })
-    }
-
-    if (type === "commentUpdated") {
-        const { content, postId, commentId, status } = data
-        const comments = posts[postId].comments
-        console.log(comments)
-
-        const comment = comments.find((com) => {
-            return com.commentId === commentId
-        })
-
-        comment.status = status
-        comment.content = content
-    }
+    const comment = post.comments.find((comment) => comment.id === id);
+    comment.status = status;
+    comment.content = content;
+  }
 }
 
-async function eventCall(port,hostname='localhost') {
-    const options = {
-        hostname,
-        port,
-        method: "GET",
-        path: '/events'
+app.get("/posts", (req, res) => {
+  res.send(posts);
+});
 
-    }
+app.post("/events", (req, res) => {
+  const { type, data } = req.body;
 
-    return new Promise((resolve, reject) => {
-        let rawdata = ''
+  HandelEvent(type, data);
 
-        const request = http.request(options, (response) => {
-            response.on('data', (chunk) => {
-                rawdata += chunk
-            })
-            response.on('end', () => {
-                const data = JSON.parse(rawdata)
-                resolve(data)
-            })
-        })
+  res.send({});
+});
 
-        request.on('error', (error) => {
-            reject(error)
-        })
-        request.end()
+app.listen(4002, async (err) => {
+  if (err) {
+    console.log(err);
+  } else {
+    console.log("Listening on 4002 !!");
 
-    })
-
-}
-app.post('/events', (req, res) => {
-    const { data, type } = req.body
-    eventHandel(type, data)
-    res.send({})
-})
-
-
-app.listen(9000, async () => {
-    console.log("Server is running on 9000!!")
-    
-
+    let events = []
     try {
-        const data = await eventCall(8000,'event-bus')
-        console.log(data)
-    for (let event of data) {
-        console.log("processing event", event.type)
-        eventHandel(event.type, event.data)
-    }
+      const res = await call("http://localhost:4005/events");
+      events = await JSON.parse(res["response"])
     } catch (error) {
-        console.log(error)
+      console.error("Error fetching events:", error.message);
     }
-})
+
+    for (const element of events) {
+      HandelEvent(element.type, element.data);
+    }
+  }
+});
