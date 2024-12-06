@@ -1,24 +1,5 @@
-import { useEffect, useState } from "react";
 
 function RenderComment({ comments }) {
-  // async function getComment() {
-  //   try {
-  //       const res = await fetch(`http://localhost:4001/posts/${postId}/comment`);
-  //       const data = await res.json();
-  //       if (res.ok) {
-  //         setComment(data);
-  //       } else {
-  //         throw new Error("Failed to fetch Post");
-  //       }
-  //     } catch (error) {
-  //       console.error(error);
-  //     }
-  // }
-
-  // useEffect(() => {
-  //   getComment();
-  // }, []);
-
   if (!comments) {
     return <></>;
   }

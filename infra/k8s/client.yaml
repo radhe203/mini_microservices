@@ -1,0 +1,32 @@
+apiVersion: v1
+Kind: Deployment
+metadata:
+  name: client-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client
+  template: 
+    metadate:
+      labels:
+        app: client
+    spec:
+      container:
+        - name: client
+          image: radhe2003/client
+
+---
+
+apiVersion: v1
+Kind: Service
+metadata:
+  name: client-srv
+spec:
+  selector:
+    app: client
+  ports:
+    - name: client
+      protocol: TCP
+      port: 5173
+      targetport: 5173  

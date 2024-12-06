@@ -6,31 +6,31 @@ app.use(express.json());
 
 const events = [];
 
-app.post("/events", async (req, res) => {
+app.post("/event-bus/events", async (req, res) => {
   const event = req.body;
-
+  console.log("Recived Event",event.type);
   events.push(event);
 
   try {
-    await call("http://localhost:4000/events", "POST", {}, event);
+    await call("http://posts-srv:4000/posts/events", "POST", {}, event);
   } catch (error) {
     console.log(error);
   }
 
   try {
-    await call("http://localhost:4001/events", "POST", {}, event);
+    await call("http://comments-srv:4001/comments/events", "POST", {}, event);
   } catch (error) {
     console.log(error);
   }
 
   try {
-    await call("http://localhost:4002/events", "POST", {}, event);
+    await call("http://query-srv:4002/query/events", "POST", {}, event);
   } catch (error) {
     console.log(error);
   }
 
   try {
-    await call("http://localhost:4003/events", "POST", {}, event);
+    await call("http://moderation-srv:4003/moderation/events", "POST", {}, event);
   } catch (error) {
     console.log(error);
   }
@@ -38,7 +38,7 @@ app.post("/events", async (req, res) => {
   res.sendStatus(200);
 });
 
-app.get("/events", (req, res) => {
+app.get("/event-bus/events", (req, res) => {
   res.send(events);
 });
 

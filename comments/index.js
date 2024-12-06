@@ -8,11 +8,11 @@ app.use(express.json());
 
 const commentsByPostId = {};
 
-app.get("/posts/:id/comment", (req, res) => {
+app.get("/comments/posts/:id/comment", (req, res) => {
   res.send(commentsByPostId[req.params.id] || []);
 });
 
-app.post("/posts/:id/comment", async (req, res) => {
+app.post("/comments/posts/:id/comment", async (req, res) => {
   const { content } = req.body;
   const postId = req.params.id;
   const commentId = randomBytes(4).toString("hex");
@@ -29,7 +29,7 @@ app.post("/posts/:id/comment", async (req, res) => {
 
   try {
     const eventResponse = await call(
-      "http://localhost:4005/events",
+      "http://event-bus-srv:4005/event-bus/events",
       "POST",
       {},
       {
@@ -51,9 +51,9 @@ app.post("/posts/:id/comment", async (req, res) => {
   }
 });
 
-app.post("/events", async (req, res) => {
+app.post("/comments/events", async (req, res) => {
   const { type, data } = req.body;
-
+  console.log("Recived Event",type);
   if (type === "CommentModerated") {
     const { id, status, postId, content } = data;
     const comments = commentsByPostId[postId];
@@ -64,7 +64,7 @@ app.post("/events", async (req, res) => {
 
     try {
       await call(
-        "http://localhost:4005/events",
+        "http://event-bus-srv:4005/event-bus/events",
         "POST",
         {},
         {
@@ -84,7 +84,6 @@ app.post("/events", async (req, res) => {
       res.status(500).send({ error: "Failed to send event" });
     }
   } else {
-    console.log("hi event comment")
     res.sendStatus(200);
   }
 });

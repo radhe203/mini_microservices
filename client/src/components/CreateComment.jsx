@@ -11,7 +11,7 @@ function CreateComment({ postId }) {
     }
 
     try {
-      const res = await fetch(`http://localhost:4001/posts/${postId}/comment`, {
+      const res = await fetch(`http://posts.com/comments/posts/${postId}/comment`, {
         method: "POST",
         headers: {
           "Content-Type": "Application/json",

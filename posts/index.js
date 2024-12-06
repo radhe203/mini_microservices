@@ -25,7 +25,7 @@ app.post("/posts", async (req, res) => {
 
   try {
     const eventResponse = await call(
-      "http://localhost:4005/events",
+      "http://event-bus-srv:4005/event-bus/events",
       "POST",
       {},
       {
@@ -43,8 +43,8 @@ app.post("/posts", async (req, res) => {
 
 });
 
-app.post("/events", (req, res) => {
-  console.log("Recived Event", req.body);
+app.post("/posts/events", (req, res) => {
+  console.log("Recived Event", req.body.type);
   res.send({});
 });
 

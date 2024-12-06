@@ -7,7 +7,7 @@ function PostList() {
 
   async function getPost() {
     try {
-      const res = await fetch("http://localhost:4002/posts");
+      const res = await fetch("http://posts.com/query/posts");
       const data = await res.json();
       if (res.ok) {
         setPosts(data);

@@ -9,7 +9,7 @@ function CreatePost() {
       return;
     }
     try {
-      const res = await fetch("http://localhost:4000/posts", {
+      const res = await fetch("http://posts.com/posts", {
         method: "POST",
         headers: {
           "Content-Type": "Application/json",

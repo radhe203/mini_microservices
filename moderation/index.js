@@ -4,15 +4,15 @@ import call from "./call.js";
 const app = express();
 app.use(express.json());
 
-app.post("/events", async (req, res) => {
+app.post("/moderation/events", async (req, res) => {
   const { type, data } = req.body;
-
+  console.log("Recived Event",type);
   if (type === "CommentCreated") {
     const status = data.content.includes("orange") ? "rejected" : "approved";
 
     try {
       await call(
-        "http://localhost:4005/events",
+        "http://event-bus-srv:4005/event-bus/events",
         "POST",
         {},
         {

@@ -33,13 +33,13 @@ function HandelEvent(type, data) {
   }
 }
 
-app.get("/posts", (req, res) => {
+app.get("/query/posts", (req, res) => {
   res.send(posts);
 });
 
-app.post("/events", (req, res) => {
+app.post("/query/events", (req, res) => {
   const { type, data } = req.body;
-
+  console.log("Recived Event",type);
   HandelEvent(type, data);
 
   res.send({});
@@ -53,7 +53,7 @@ app.listen(4002, async (err) => {
 
     let events = []
     try {
-      const res = await call("http://localhost:4005/events");
+      const res = await call("http://event-bus-srv:4005/event-bus/events");
       events = await JSON.parse(res["response"])
     } catch (error) {
       console.error("Error fetching events:", error.message);
