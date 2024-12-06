@@ -1,0 +1,30 @@
+apiVersion: v1
+Kind: Deployment
+metadata:
+  name: query-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      app: query
+  template:
+    metadata: 
+      labels:
+        app: query
+    spec:
+      containers:
+        - name: query
+          image: radhe2003/query
+---
+apiVersion: v1
+Kind: Service
+metadata: 
+  name: query-srv
+spec: 
+  selector:
+    app: query
+  ports:
+    - name: query
+      protocol: TCP
+      port: 4002
+      targetport: 4002                        
